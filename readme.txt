@@ -1,7 +1,7 @@
 COSC 455 Project 1 - LOLCODE Markdown Compiler
 Muhammad Abdullah Zia
 
-GitHub repository: <PASTE YOUR PUBLIC GITHUB URL HERE>
+GitHub repository: https://github.com/mabdullahh07/Lolcode-Compiler
 
 Target OS: Windows (bin/lolcompiler.exe, built with cargo build --release on Windows 11 x64)
 Usage:  lolcompiler.exe input.lol

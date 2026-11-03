@@ -1,0 +1,142 @@
+===== Test1.txt
+Usage error: 'Test1.txt' does not have a .lol extension
+Usage: lolcompiler <input.lol>
+===== Test2.lol
+Compiled successfully: Test2.html
+<html>
+<!-- This test case assess that your compiler processes a simple lolcode file. -->
+<head>
+<title>Test 2</title>
+</head>
+<body>
+This is test case 2.
+</body>
+</html>
+===== Test3.lol
+Compiled successfully: Test3.html
+<html>
+<!-- This test case assess that your compiler processes a simple lolcode file. -->
+<head>
+<title>Test 3</title>
+</head>
+<body>
+This is <b>test case 3</b> .
+</body>
+</html>
+===== Test4.lol
+Lexical error (line 3): '#HEAD' is not a valid annotation
+(no HTML generated)
+===== Test5.lol
+Syntax error (line 5): Unexpected annotation #MKAY
+(no HTML generated)
+===== Test6.lol
+Compiled successfully: Test6.html
+<html>
+<!-- This test case assess that your compiler resolves a simple variable. -->
+<head>
+<title>Test 6</title>
+</head>
+<body>
+
+<p><b>What is the meaning of life.</b> The meaning of <b>life</b> is 42</p>
+
+</body>
+</html>
+===== Test7.lol
+Static semantic error: variable 'answer' is used but never defined in this scope (line 9)
+(no HTML generated)
+===== Test8.lol
+Compiled successfully: Test8.html
+<html>
+<!-- This test case assess that your compiler resolves variable scoping. -->
+<head>
+<title>Test 8</title>
+</head>
+<body>
+
+<p><b>What is the meaning of life.</b> The meaning of <b>life</b> is 42</p>
+ 
+<p>No. The meaning of life is really happiness</p>
+
+</body>
+</html>
+===== Test9.lol
+Compiled successfully: Test9.html
+<html>
+<!-- This test case assess that your compiler resolves multiple variable. -->
+<head>
+<title>Test 9</title>
+</head>
+<body>
+
+<p><b>What is the meaning of life.</b> The meaning of <b>life</b> is 42</p>
+ 
+<p>No. The meaning of life is really happiness</p>
+
+</body>
+</html>
+===== Test10.lol
+Compiled successfully: Test10.html
+<html>
+<!-- This test case assess that uses other legal syntax. -->
+<head>
+<title>Test 10</title>
+</head>
+<body>
+
+<p><b>What is the meaning of life.</b> The meaning of <b>life</b> is happiness.</p>
+ Here is my proof <a href="https://www.youtube.com/watch?v=aboZctrHfK8">https://www.youtube.com/watch?v=aboZctrHfK8</a>
+</body>
+</html>
+===== Test11_Simpsons.lol
+Compiled successfully: Test11_Simpsons.html
+<html>
+<!-- This is a LOLCODE Markdown source file -->
+<head>
+<title>The Simpsons</title>
+</head>
+<body>
+
+<p>The Simpsons! <br>
+ <a href="www.thesimpsons.com">www.thesimpsons.com</a> <br>
+ The members of the <b>Simpson</b> family are: 
+<ul>
+<li>Homer Simpson</li>
+<li>Marge Simpson</li>
+<li>Bart Simpson</li>
+</ul>
+ <br>
+</p>
+
+</body>
+</html>
+===== Test12_ListVariables.lol
+Compiled successfully: Test12_ListVariables.html
+<html>
+<body>
+
+<p>The members of the <b>Simpson</b> are: 
+<ul>
+<li>Homer Simpson</li>
+<li>Ned Flanders</li>
+<li>Lisa Simpson</li>
+</ul>
+</p>
+
+</body>
+</html>
+===== Test13_Scope.lol
+Compiled successfully: Test13_Scope.html
+<html>
+<body>
+Hi, my name is Josh . 
+<p>Inside the paragraph block, my name is Jon</p>
+ Now my name is Josh again.
+</body>
+</html>
+===== Test14_NestedParagraph.lol
+Syntax error (line 2): Nested paragraph is not allowed
+(no HTML generated)
+===== Test15_ItemOutsideList.lol
+Syntax error (line 1): Invalid #GIMMEH construct
+(no HTML generated)

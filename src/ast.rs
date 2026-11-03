@@ -1,13 +1,6 @@
-//! Abstract syntax tree for LOLCODE Markdown.
-//!
-//! After the `Parser` has checked the syntax, `AstParser` walks the same
-//! tokens again, builds the tree, and replaces every `#GIMMEH VAR` with the
-//! variable's value using static scoping (a stack of scopes).
-
 use std::collections::HashMap;
 
-/// A whole LOLCODE document: optional comments before the head, an optional
-/// title, and the body.
+// Stores the whole document, including its title, comments, and body.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Document {
     pub comments: Vec<String>,
@@ -15,7 +8,7 @@ pub struct Document {
     pub body: Vec<Node>,
 }
 
-/// One element of the body.
+// Represents the different things that can appear in the document.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Text(String),
@@ -27,8 +20,7 @@ pub enum Node {
     Newline,
 }
 
-/// Builds the `Document` from a token list. Holds a stack of scopes,
-/// innermost scope last.
+// Builds the document from tokens and keeps track of variables.
 pub struct AstParser {
     tokens: Vec<String>,
     pos: usize,
@@ -36,25 +28,29 @@ pub struct AstParser {
 }
 
 impl AstParser {
-    /// Create a builder over the tokens produced by the lexer.
+    // Creates a new AST parser.
     pub fn new(tokens: Vec<String>) -> Self {
         Self { tokens, pos: 0, scopes: vec![HashMap::new()] }
     }
 
+    // Gets the current token in uppercase.
     fn current(&self) -> Option<String> {
         self.tokens.get(self.pos).map(|s| s.trim().to_uppercase())
     }
 
+    // Gets the next token in uppercase.
     fn next(&self) -> Option<String> {
         self.tokens.get(self.pos + 1).map(|s| s.trim().to_uppercase())
     }
 
+    // Returns the current token and moves forward.
     fn take(&mut self) -> Result<String, String> {
         let token = self.tokens.get(self.pos).ok_or("unexpected end of file")?.clone();
         self.pos += 1;
         Ok(token)
     }
 
+    // Checks if the token matches what we expect.
     fn expect(&mut self, expected: &str) -> Result<(), String> {
         let token = self.take()?;
         if token.eq_ignore_ascii_case(expected) {
@@ -64,13 +60,12 @@ impl AstParser {
         }
     }
 
-    /// Static scoping: search from the innermost scope outward.
+    // Searches for a variable, starting from the current scope.
     fn lookup(&self, name: &str) -> Option<String> {
         self.scopes.iter().rev().find_map(|scope| scope.get(name).cloned())
     }
 
-    /// Collect plain-text words until the given closing annotation,
-    /// resolving any variable uses along the way.
+    // Reads text until the closing annotation and replaces variables.
     fn text_until(&mut self, end: &str) -> Result<String, String> {
         let mut words = Vec::new();
         while self.current().as_deref() != Some(end) {
@@ -84,7 +79,7 @@ impl AstParser {
         Ok(words.join(" "))
     }
 
-    /// `#IHAZ name #ITIZ value #MKAY` — store in the innermost scope.
+    // Creates a variable and stores its value in the current scope.
     fn variable_define(&mut self) -> Result<(), String> {
         self.expect("#IHAZ")?;
         let name = self.take()?;
@@ -94,7 +89,7 @@ impl AstParser {
         Ok(())
     }
 
-    /// `#GIMMEH VAR name #OIC` — return the variable's value.
+    // Gets the value of a variable.
     fn variable_use(&mut self) -> Result<String, String> {
         self.expect("#GIMMEH")?;
         self.expect("VAR")?;
@@ -105,8 +100,8 @@ impl AstParser {
         })
     }
 
-    /// Parse one element that can appear in the body, a paragraph or a list
-    /// item. Returns `None` for a variable definition (no output).
+    // Reads one part of the document and returns its AST node.
+    // Variable definitions do not produce anything in the HTML.
     fn element(&mut self) -> Result<Option<Node>, String> {
         let token = self.current().ok_or("unexpected end of file")?;
         let node = match token.as_str() {
@@ -146,7 +141,7 @@ impl AstParser {
         Ok(Some(node))
     }
 
-    /// Parse elements until the closing annotation `end` (not consumed).
+    // Reads elements until the closing annotation.
     fn elements_until(&mut self, end: &str) -> Result<Vec<Node>, String> {
         let mut nodes = Vec::new();
         while self.current().as_deref() != Some(end) {
@@ -157,7 +152,7 @@ impl AstParser {
         Ok(nodes)
     }
 
-    /// `#MAEK PARAGRAF ... #MKAY` — opens a new scope.
+    // Creates a paragraph and gives it its own variable scope.
     fn paragraph(&mut self) -> Result<Node, String> {
         self.pos += 2;
         self.scopes.push(HashMap::new());
@@ -167,12 +162,12 @@ impl AstParser {
         Ok(Node::Paragraph(nodes))
     }
 
-    /// `#MAEK LIST (#GIMMEH ITEM ... #OIC)+ #MKAY` — each item is a scope.
+    // Reads a list. Each list item gets its own variable scope.
     fn list(&mut self) -> Result<Node, String> {
         self.pos += 2;
         let mut items = Vec::new();
         while self.current().as_deref() == Some("#GIMMEH") {
-            self.pos += 2; // #GIMMEH ITEM
+            self.pos += 2; // Skips #GIMMEH ITEM.
             self.scopes.push(HashMap::new());
             items.push(self.elements_until("#OIC")?);
             self.expect("#OIC")?;
@@ -182,16 +177,18 @@ impl AstParser {
         Ok(Node::List(items))
     }
 
-    /// Build the whole document starting at `#HAI`.
+    // Builds the document starting from #HAI.
     pub fn parse_document(&mut self) -> Result<Document, String> {
         self.expect("#HAI")?;
 
+        // Reads comments before the head.
         let mut comments = Vec::new();
         while self.current().as_deref() == Some("#OBTW") {
             self.expect("#OBTW")?;
             comments.push(self.text_until("#TLDR")?);
         }
 
+        // Reads the title if the document has a head.
         let mut title = None;
         if self.current().as_deref() == Some("#MAEK") && self.next().as_deref() == Some("HEAD") {
             self.pos += 2;
@@ -201,8 +198,10 @@ impl AstParser {
             self.expect("#MKAY")?;
         }
 
+        // Reads the body and finishes the document.
         let body = self.elements_until("#KBYE")?;
         self.expect("#KBYE")?;
+
         Ok(Document { comments, title, body })
     }
 }
