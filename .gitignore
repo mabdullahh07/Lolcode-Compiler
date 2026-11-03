@@ -29,4 +29,4 @@ rustc-ice-*.txt
 /target
 
 # Keep AI transcript out of GitHub
-design//AI_transcripts*
+design/AI_transcripts.txt 

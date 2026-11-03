@@ -1,86 +1,63 @@
-COSC 455 - Programming Languages: Design & Implementation
-Project 1, Phase 1 - BNF Grammar for LOLCODE Markdown
-by Muhammad Abdullah Zia
-10/9/2026
+COSC 455 - Programming Languages: Design and Implementation
+Fall 2026
+LOLCODE Markdown Language Context Free Grammar
 
 
->>>>>NOTATION<<<<<
-
-- Plain BNF
-- Repetition is written with right recursion
-- Terminals are the annotation tokens produced by the lexical analyzer (written as they appear, but matched case-insensitively), plus the token  text.
-- text = one lexeme of allowed characters (A-Z, a-z, 0-9, , . " : ? ! % = / plus spaces, tabs, newlines) gathered by the lexer up to the next '#'.
-- The 17 non-terminals are exactly the parse_* functions of the SyntaxAnalyzer trait.
+The following is one possible context-free (BNF) grammar for the LOLCODE Markdown language described in Project 1. The grammar is written
+in plain BNF and is structured for implementation using a hand-written recursive-descent parser.
 
 
+Terminals
+HAI ::= "#HAI"
+KBYE ::= "#KBYE"
+OBTW ::= "#OBTW"
+TLDR ::= "#TLDR"
+MAEK ::= "#MAEK"
+OIC ::= "#OIC"
+GIMMEH ::= "#GIMMEH"
+MKAY ::= "#MKAY"
+HEAD ::= "HEAD"
+TITLE ::= "TITLE"
+PARAGRAF ::= "PARAGRAF"
+BOLD ::= "BOLD"
+LIST ::= "LIST"
+ITEM ::= "ITEM"
+NEWLINE ::= "#NEWLINE"
+LINX ::= "LINX"
+IHAZ ::= "#IHAZ"
+ITIZ ::= "#ITIZ"
+VAR ::= "VAR"
+VARNAME ::= any single word (A-Z, a-z, no spaces)
+VARVALUE ::= allowed text characters
+TEXT ::= plain text (letters, digits, punctuation, spaces, tabs, newlines)
+ADDRESS ::= text without spaces
 
 
->>>>>GRAMMAR (start symbol: <lolcode>)<<<<<
-
-<lolcode>         ::= #HAI <comment> <head> <variable_define> <body> #KBYE
-
-<comment>         ::= #OBTW <text> #TLDR <comment> | ε
-
-<head>            ::= #MAEK HEAD <title> #MKAY <comment> | ε
-
-<title>           ::= #GIMMEH TITLE <text> #OIC
-
-<variable_define> ::= #IHAZ <text> #ITIZ <text> #MKAY <comment> <variable_define> | ε
-
-<body>            ::= <paragraph> <body> | <bold> <body> | <list> <body> | <link> <body> | <newline> <body> | <variable_use> <body> | <text> <body> | ε
-
-<paragraph>       ::= #MAEK PARAGRAF <variable_define> <inner_paragraph> #MKAY <comment>
-
-<inner_paragraph> ::= <text> <inner_paragraph> | <bold> <inner_paragraph> | <list> <inner_paragraph> | <link> <inner_paragraph> | <newline> <inner_paragraph> | <variable_use> <inner_paragraph> | ε
-
-<bold>            ::= #GIMMEH BOLD <variable_define> <inner_text> #OIC
-
-<inner_text>      ::= <text> <inner_text> | <variable_use> <inner_text> | ε
-
-<list>            ::= #MAEK LIST #GIMMEH ITEM <variable_define> <inner_list> #OIC <list_items> #MKAY <comment>
-
-<list_items>      ::= #GIMMEH ITEM <variable_define> <inner_list> #OIC <list_items> | ε
-
-<inner_list>      ::= <text> <inner_list> | <bold> <inner_list> | <variable_use> <inner_list> | ε
-
-<link>            ::= #GIMMEH LINX <text> #OIC
-
-<newline>         ::= #NEWLINE <comment>
-
-<variable_use>    ::= #GIMMEH VAR <text> #OIC
-
-<text>            ::= text
+Notes on terminals
+• All annotations are case-insensitive.
+• The only allowed plain-text characters are those specified in Project 1.
+• The "#" character is reserved for LOLCODE Markdown annotations and is not part of ordinary TEXT.
 
 
-
-
->>>>>PAIRWISE DISJOINTNESS TEST (one-token lookahead)<<<<<
-
-For every non-terminal with more than one right-hand side, the FIRST sets of its alternatives must not overlap. FIRST(<text>) = { text }.
-
-<comment>         : { #OBTW }  vs  ε                                              -> disjoint
-<head>            : { #MAEK HEAD }  vs  ε                                         -> disjoint
-<variable_define> : { #IHAZ }  vs  ε                                              -> disjoint
-<body>            : { #MAEK PARAGRAF } { #GIMMEH BOLD } { #MAEK LIST } { #GIMMEH LINX } { #NEWLINE } { #GIMMEH VAR } { text }  vs  ε        -> disjoint
-<inner_paragraph> : { text } { #GIMMEH BOLD } { #MAEK LIST } { #GIMMEH LINX } { #NEWLINE } { #GIMMEH VAR }  vs  ε                           -> disjoint
-<inner_text>      : { text } { #GIMMEH VAR }  vs  ε                               -> disjoint
-<list_items>      : { #GIMMEH ITEM }  vs  ε                                       -> disjoint
-<inner_list>      : { text } { #GIMMEH BOLD } { #GIMMEH VAR }  vs  ε              -> disjoint
-
-The ε alternatives are also safe: no rule that can be empty is ever followed by a token that starts its own non-empty alternative (e.g. a <comment> is never followed by #OBTW, a <head> is never followed by #MAEK HEAD, and <list_items> is always followed by #MKAY).
-There is no left recursion: every recursive rule starts with a terminal or a different non-terminal before it recurses. The grammar can be parsed top-down by recursive descent with one token of lookahead.
-
-
-
-
->>>>>HOW THE GRAMMAR ENFORCES THE SPECIFICATION<<<<<
-
-1. A file must start with #HAI and end with #KBYE; nothing may come before or after, and #HAI/#KBYE cannot repeat (they appear only in <lolcode>).
-2. <head> may only come right after #HAI, optionally after comments, and must contain exactly one <title>. <title> holds only plain text.
-3. A <paragraph> cannot contain another paragraph (<inner_paragraph> has no <paragraph>).
-4. A <list> must begin immediately with #GIMMEH ITEM, and items appear only inside lists. Items may hold text, bold and variable uses.
-5. Bold may hold text and variable uses (as in the specification's second example).
-6. A variable definition (#IHAZ name #ITIZ value #MKAY) may only be the first annotation(s) in a block: right after #HAI (and the optional head), or right after #MAEK PARAGRAF, #GIMMEH BOLD or #GIMMEH ITEM.
-7. Comments (#OBTW ... #TLDR) may appear right after #HAI and immediately after an annotation closes (a head, variable definition, paragraph, list) or after #NEWLINE.
-8. #NEWLINE and links may appear anywhere in the body, paragraphs included, but not in the head or title.
-9. Whether a used variable is actually defined in its static scope is not a syntax rule. It is checked by the semantic analyzer (static semantic error).
+Syntax / Production Rules (Non-terminals)
+<lolcode> ::= HAI <comments> <head> <optional-variable-define> <body> KBYE
+<comments> ::= <comment> <comments | ε
+<comment> ::= OBTW TEXT TLDR
+<head> ::= MAEK HEAD <title> MKAY | ε
+<title> ::= GIMMEH TITLE TEXT OIC
+<body> ::= <inner-body> <body> | ε
+<inner-body> ::= <paragraph> | <comment> | <bold> | <list> | <link> | <newline> | <variable-use> | TEXT
+<paragraph> ::= MAEK PARAGRAF <optional-variable-define> <inner-paragraph> MKAY
+<inner-paragraph> ::= <inner-text> <inner-paragraph> | ε
+<inner-text> ::= <variable-use> | <comment> | <bold> | <list> | <link> | <newline> | TEXT
+<bold> ::= GIMMEH BOLD TEXT OIC
+<list> ::= MAEK LIST <list-item> <list-items> MKAY
+<list-items> ::= <list-item> <list-items> | ε
+<list-item> ::= GIMMEH ITEM <optional-variable-define> <inner-list> OIC
+<inner-list> ::= <list-content> <inner-list> | ε
+<list-content> ::= <bold> | <comment> | <link> | <newline> | <variable-use> | TEXT
+<link> ::= GIMMEH LINX ADDRESS OIC
+<newline> ::= NEWLINE
+<optional-variable-define> ::= <variable-define> | ε
+<variable-define> ::= IHAZ VARNAME ITIZ VARVALUE MKAY
+<variable-use> ::= GIMMEH VAR VARNAME OIC
