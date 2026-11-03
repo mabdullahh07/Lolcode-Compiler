@@ -1,0 +1,4 @@
+AI/LLM transcripts / permalinks used for Project 1 (Phases 1-6):
+
+- Claude (implementation, Phase 2-6): <PASTE CLAUDE SHARE LINK HERE>
+- ChatGPT (planning / Phase 1 design): <PASTE CHATGPT SHARE LINK(S) HERE>
