@@ -63,9 +63,35 @@ impl Parser {
 
     fn parse_head(&mut self) -> Result<(), String> {
         self.expect("#MAEK")?;
-        self.expect("HEAD")?;
-        self.parse_title()?;
-        self.expect("#MKAY")
+
+        let head = self.take().ok_or("Missing HEAD")?;
+
+        if !head.trim().eq_ignore_ascii_case("HEAD") {
+            return Err("Expected HEAD after #MAEK".into());
+        }
+
+        self.expect("#GIMMEH")?;
+
+        let title = self.take().ok_or("Missing TITLE")?;
+
+        if !title.trim().to_uppercase().starts_with("TITLE") {
+            return Err("Expected TITLE after #GIMMEH".into());
+        }
+
+        self.expect("#OIC")?;
+
+        // Skip whitespace tokens before #MKAY
+        while let Some(token) = self.current() {
+            if token.trim().is_empty() {
+                self.position += 1;
+            } else {
+                break;
+            }
+        }
+
+        self.expect("#MKAY")?;
+
+        Ok(())
     }
 
     fn parse_variable_define(&mut self) -> Result<(), String> {
@@ -178,11 +204,20 @@ impl Parser {
 
             match token {
                 "#OBTW" => self.parse_comment()?,
-                "#MAEK" => match self.tokens.get(self.position + 1).map(String::as_str) {
-                    Some("PARAGRAF") => self.parse_paragraph()?,
-                    Some("LIST") => self.parse_list()?,
-                    Some("HEAD") => self.parse_head()?,
-                    _ => return Err("Unknown #MAEK construct".into()),
+                "#MAEK" => {
+                    let next = self.tokens
+                        .get(self.position + 1)
+                        .map(|s| s.trim().to_uppercase());
+
+                    match next.as_deref() {
+                        Some("PARAGRAF") => self.parse_paragraph()?,
+                        Some("LIST") => self.parse_list()?,
+                        Some("HEAD") => self.parse_head()?,
+                        _ => return Err(format!(
+                            "Unknown #MAEK construct. Next token: {:?}",
+                            next
+                        )),
+                    }
                 },
                 "#GIMMEH" => match self.tokens.get(self.position + 1).map(String::as_str) {
                     Some("VAR") => self.parse_variable_use()?,
@@ -209,7 +244,9 @@ impl Parser {
         }
 
         if self.current() == Some("#MAEK")
-            && self.tokens.get(self.position + 1).map(String::as_str) == Some("HEAD")
+            && self.tokens.get(self.position + 1)
+                .map(|s| s.trim().eq_ignore_ascii_case("HEAD"))
+                .unwrap_or(false)
         {
             self.parse_head()?;
         }
